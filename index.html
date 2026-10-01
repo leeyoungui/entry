@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>🤖 알고리즘 보드게임 – 블록코딩 준비</title>
+<style>
+:root{--bg:#f3f6fb;--card:#fff;--tx:#1d2733;--bd:#d3dbe8;--cell:#e9eff8;--mv:#3b82f6;--tn:#8b5cf6;--lp:#f59e0b;--if:#10b981;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#131922;--card:#1e2733;--tx:#e8eef6;--bd:#34425a;--cell:#26324a}}
+:root[data-theme="dark"]{--bg:#131922;--card:#1e2733;--tx:#e8eef6;--bd:#34425a;--cell:#26324a}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font-family:"Noto Sans KR","Apple SD Gothic Neo",system-ui,sans-serif;padding:12px}
+h1{font-size:20px;margin:0 0 4px}.sub{font-size:13px;opacity:.75;margin:0 0 10px}
+.wrap{display:flex;gap:12px;flex-wrap:wrap;max-width:1000px;margin:auto}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:10px;flex:1 1 320px}
+.tools,.pal{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+button{font:inherit;font-size:16px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;padding:10px 12px;cursor:pointer}
+button.on{outline:3px solid #3b82f6}
+button.go{background:#16a34a;color:#fff;border:0;font-weight:700}button.stp{background:#ef4444;color:#fff;border:0}
+#bw{position:relative;max-width:460px;margin:auto}#board{display:grid;grid-template:repeat(6,1fr)/repeat(6,1fr);aspect-ratio:1}
+.c{border:3px solid var(--card);background:var(--cell);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:clamp(20px,6vw,34px);position:relative;cursor:pointer;user-select:none}
+.c i{position:absolute;right:3px;bottom:0;font-size:13px;font-style:normal;color:#2563eb}
+.c.ok{background:#bbf7d0}.c.bad{background:#fecaca}
+#msg{min-height:44px;margin-top:8px;padding:8px;border-radius:10px;background:var(--cell);font-size:14px}
+.hat{background:#facc15;color:#422;padding:8px 10px;border-radius:10px 10px 4px 4px;font-weight:700;font-size:14px}
+#ws{min-height:120px;padding:6px 0 6px 10px;border-left:4px solid #facc15}
+.b{color:#fff;border-radius:8px;padding:9px 10px;margin:4px 0;font-size:17px}
+.b.move{background:var(--mv)}.b.left,.b.right{background:var(--tn)}.b.repeat{background:var(--lp)}.b.if{background:var(--if)}
+.b.run{outline:3px solid #fde047}.b.act{box-shadow:0 0 0 3px #0003 inset}
+.in{margin:6px 0 2px 14px;padding-left:8px;border-left:4px solid #fff8;min-height:12px}
+.b input,.b select{font:inherit;width:auto;border-radius:6px;border:0;padding:2px 4px}.b input{width:44px}
+.x{float:right;background:#0003;color:#fff;border:0;padding:0 7px;border-radius:6px}
+.end{background:#0003;color:#fff;border-radius:6px;padding:4px 8px;margin-top:4px;font-size:12px;cursor:pointer;text-align:center}.hint{font-size:12px;opacity:.7}
+#rb{position:absolute;left:0;top:0;width:16.6667%;aspect-ratio:1;pointer-events:none;transition:left .35s,top .35s;z-index:2}
+#rb svg{width:100%;height:100%;transition:transform .3s;filter:drop-shadow(0 3px 3px #0006)}
+.hd{cursor:grab;font-size:20px;padding:0 8px 0 0;touch-action:none;user-select:none}
+[data-b]{touch-action:none;user-select:none}
+#ind{position:fixed;height:6px;background:#facc15;border-radius:3px;pointer-events:none;display:none;z-index:9}
+.gh{position:fixed;z-index:10;pointer-events:none;opacity:.92;transform:translate(-20px,-20px)}
+@keyframes hop{50%{transform:translateY(-25%)}}#rb.hop{animation:hop .4s 4}
+</style></head><body>
+<h1>🤖 알고리즘 보드게임</h1>
+<p class="sub">① 맵 만들기 → ② 블록으로 알고리즘 짜기 → ③ 실행! (엔트리·스크래치 블록과 같은 방식이에요)</p>
+<div class="wrap">
+<div class="card">
+<b>① 맵 만들기</b>
+<div class="tools" id="tools"></div>
+<div id="bw"><div id="board"></div><div id="rb"></div></div>
+<div id="msg">도구를 고르고 칸을 눌러 보세요. 🤖를 다시 누르면 방향이 바뀌어요. 안테나(빨간 공)가 가리키는 쪽이 앞이에요!</div>
+</div>
+<div class="card">
+<b>② 알고리즘 짜기</b>
+<div class="pal" id="pal"></div>
+<div class="hat" id="hat" style="cursor:pointer" title="누르면 맨 아래에 블록이 추가돼요">▶ 시작하기 버튼을 클릭했을 때</div>
+<div id="ws"></div>
+<div class="tools">
+<button class="go" id="run">▶ 실행</button><button class="stp" id="stop">■ 멈추기</button><button id="snd">🔊 소리 켜짐</button>
+<button id="clr">🗑 블록 모두 지우기</button><button id="reset">⟳ 처음으로</button>
+</div>
+<div class="hint" id="cnt"></div><div class="hint">🖐 블록을 끌어서 원하는 곳에 놓아요. 놓인 블록은 왼쪽 ⠿ 를 잡고 옮기고, 위쪽 블록 모음으로 끌어다 놓으면 지워져요.</div>
+<div class="hint">🔁 반복하기나 만약 블록을 누르면 그 안에 블록이 들어가요. (노란 테두리 = 들어갈 곳) 블록을 바깥(아래)에 이어 붙이려면 ⤵ 끝 막대나 ▶ 시작 블록을 눌러요.</div>
+</div>
+</div>
+<script>
+const N=6,$=id=>document.getElementById(id),K=(r,c)=>r+','+c,D=[[-1,0],[0,1],[1,0],[0,-1]],AR='▲▶▼◀';
+let M,tool='trap',prog=[],active=null,bot,got,cur=null,running=false,stopF=false,dead=false,uid=0,over=null,ops=0;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function fresh(){return{s:{r:0,c:0,d:1},g:{r:5,c:5},trap:new Set(),star:new Set(),wall:new Set()}}
+function sample(){M=fresh();['1,1','2,3','3,2','4,4'].forEach(k=>M.trap.add(k));['0,3','3,4'].forEach(k=>M.star.add(k));['1,3','4,1'].forEach(k=>M.wall.add(k));reset()}
+const TOOLS=[['s','🤖 출발'],['g','🚩 도착'],['trap','🔥 함정'],['star','⭐ 미션'],['wall','🧱 벽'],['e','🧽 지우기']];
+$('tools').innerHTML=TOOLS.map(t=>`<button data-t="${t[0]}">${t[1]}</button>`).join('')+'<button id="ex">예시 맵</button><button id="em">맵 비우기</button>';
+$('tools').onclick=e=>{const t=e.target.dataset.t;if(t){tool=t;mark()}if(e.target.id=='ex')sample();if(e.target.id=='em'){M=fresh();reset()}};
+function mark(){[...$('tools').children].forEach(b=>b.classList.toggle('on',b.dataset.t==tool))}
+const PAL=[['move','⬆ 앞으로 1칸 이동하기'],['left','↶ 왼쪽으로 90° 돌기'],['right','↷ 오른쪽으로 90° 돌기'],['repeat','🔁 반복하기'],['if','❓ 만약 ~라면']];
+$('pal').innerHTML=PAL.map(p=>`<button data-b="${p[0]}">${p[1]}</button>`).join('');
+$('pal').onclick=e=>{const t=e.target.dataset.b;if(!t||running||sup)return;const b={id:++uid,t,n:3,cond:'trap',kids:[]};(active?active.kids:prog).push(b);if(t=='repeat'||t=='if')active=b;ws()};
+function find(l,id){for(const b of l){if(b.id==id)return[l,b];const f=find(b.kids,id);if(f)return f}return null}
+function bh(l){return l.map(b=>{const L={move:'⬆ 앞으로 1칸 이동하기',left:'↶ 왼쪽으로 90° 돌기',right:'↷ 오른쪽으로 90° 돌기'};
+let h=`<div class="b ${b.t}${b===cur?' run':''}${b===active?' act':''}" data-id="${b.id}"><span class="hd" data-h="${b.id}">⠿</span>`;
+const x=`<button class="x" data-del="${b.id}">✕</button>`;
+if(b.t=='repeat')h+=`${x}<span data-act="${b.id}">🔁</span> <input type="number" min="1" max="9" value="${b.n}" data-n="${b.id}"> 번 반복하기<div class="in">${bh(b.kids)}</div><div class="end" data-out="${b.id}">⤵ 반복 끝 · 여기를 누르면 아래에 블록이 추가돼요</div>`;
+else if(b.t=='if')h+=`${x}<span data-act="${b.id}">❓ 만약</span> 앞에 <select data-c="${b.id}">${[['trap','함정'],['wall','벽'],['star','별']].map(o=>`<option value="${o[0]}"${b.cond==o[0]?' selected':''}>${o[1]}</option>`).join('')}</select> 있다면<div class="in">${bh(b.kids)}</div><div class="end" data-out="${b.id}">⤵ 만약 끝 · 여기를 누르면 아래에 블록이 추가돼요</div>`;
+else h+=x+L[b.t];return h+'</div>'}).join('')}
+function cnt(l){return l.reduce((s,b)=>s+1+cnt(b.kids),0)}
+function ws(){$('ws').innerHTML=bh(prog);$('cnt').textContent='사용한 블록: '+cnt(prog)+'개 (적게 쓸수록 멋진 알고리즘!) · 블록 추가 위치: '+(active?(active.t=='repeat'?'반복 안':'만약 안'):'맨 아래')}
+$('ws').onclick=e=>{if(running)return;const t=e.target.dataset;if(t.del){const[l,b]=find(prog,t.del);l.splice(l.indexOf(b),1);if(active&&!find(prog,active.id))active=null;ws()}else if(t.out){active=par(t.out);ws()}else if(t.act){active=find(prog,t.act)[1];ws()}};
+function par(id,l=prog,p=null){for(const b of l){if(b.id==id)return p;const f=par(id,b.kids,b);if(f!==undefined)return f}}
+$('hat').onclick=()=>{if(!running){active=null;ws()}};
+$('ws').onchange=e=>{const t=e.target.dataset;if(t.n)find(prog,t.n)[1].n=Math.max(1,Math.min(9,+e.target.value||1));if(t.c)find(prog,t.c)[1].cond=e.target.value};
+$('ws').addEventListener('dblclick',()=>{active=null;ws()});
+function draw(){let h='';for(let r=0;r<N;r++)for(let c=0;c<N;c++){const k=K(r,c);let t='',cl='c';
+if(M.wall.has(k))t='🧱';else if(M.trap.has(k))t='🔥';else if(M.star.has(k)&&!got.has(k))t='⭐';
+if(M.g.r==r&&M.g.c==c)t='🚩'+(t=='⭐'?'':'');
+if(over&&bot.r==r&&bot.c==c)cl+=' '+over;
+h+=`<div class="${cl}" data-r="${r}" data-c="${c}">${t}</div>`}$('board').innerHTML=h;const rb=$('rb');rb.style.left=bot.c*100/6+'%';rb.style.top=bot.r*100/6+'%';rb.firstChild.style.transform='rotate('+bot.a+'deg)'}
+$('board').onclick=e=>{const d=e.target.closest('.c');if(!d||running)return;const r=+d.dataset.r,c=+d.dataset.c,k=K(r,c);
+if(tool=='s'){if(M.s.r==r&&M.s.c==c)M.s.d=(M.s.d+1)%4;else{M.s={r,c,d:M.s.d};['trap','wall'].forEach(x=>M[x].delete(k))}}
+else if(tool=='g'){M.g={r,c};['trap','wall','star'].forEach(x=>M[x].delete(k))}
+else{if((M.s.r==r&&M.s.c==c)||(M.g.r==r&&M.g.c==c))return;['trap','wall','star'].forEach(x=>M[x].delete(k));if(tool!='e')M[tool].add(k)}
+reset()};
+function reset(){bot={...M.s,a:M.s.d*90};got=new Set();cur=null;over=null;dead=false;draw();ws()}
+const front=()=>({r:bot.r+D[bot.d][0],c:bot.c+D[bot.d][1]});
+const inb=p=>p.r>=0&&p.c>=0&&p.r<N&&p.c<N;
+function chk(c){const p=front();if(c=='wall')return!inb(p)||M.wall.has(K(p.r,p.c));if(!inb(p))return false;return c=='trap'?M.trap.has(K(p.r,p.c)):M.star.has(K(p.r,p.c))&&!got.has(K(p.r,p.c))}
+function fail(m){(m.includes('벽')?sfx.wall:sfx.trap)();dead=true;over='bad';$('msg').textContent=m;draw()}
+async function ex(l){for(const b of l){if(stopF||dead)return;if(++ops>300){fail('😵 블록이 너무 오래 돌아요. 알고리즘을 확인해 봐요!');return}
+cur=b;ws();await sleep(450);
+if(b.t=='left'){bot.d=(bot.d+3)%4;bot.a-=90;sfx.turn()}else if(b.t=='right'){bot.d=(bot.d+1)%4;bot.a+=90;sfx.turn()}
+else if(b.t=='move'){const p=front();if(!inb(p)||M.wall.has(K(p.r,p.c))){fail('🧱 벽에 부딪혔어요! 어디서 방향을 바꿔야 할까요?');return}
+bot.r=p.r;bot.c=p.c;const k=K(p.r,p.c);if(M.trap.has(k)){fail('🔥 함정에 걸렸어요! 알고리즘을 고쳐 봐요.');return}if(M.star.has(k)&&!got.has(k)){got.add(k);sfx.star()}else sfx.move()}
+else if(b.t=='repeat'){for(let i=0;i<b.n;i++)await ex(b.kids)}
+else if(b.t=='if'){if(chk(b.cond))await ex(b.kids)}
+draw()}}
+$('run').onclick=async()=>{if(running)return;ac();reset();running=true;stopF=false;ops=0;$('msg').textContent='실행 중...';
+await ex(prog);cur=null;running=false;ws();
+if(!dead&&!stopF){const win=bot.r==M.g.r&&bot.c==M.g.c,all=got.size==M.star.size;
+if(win&&all){sfx.win();$('rb').classList.add('hop');setTimeout(()=>$('rb').classList.remove('hop'),1800);over='ok';$('msg').textContent='🎉 성공! 블록 '+cnt(prog)+'개로 해냈어요. 더 적은 블록으로도 가능할까요?'}
+else if(win){sfx.part();$('msg').textContent='🚩 도착했지만 ⭐ 미션을 다 못 모았어요. 다시 설계해 봐요!'}
+else $('msg').textContent='🤔 아직 도착하지 못했어요. 어떤 블록이 더 필요할까요?'}
+draw()};
+$('stop').onclick=()=>{stopF=true};
+$('clr').onclick=()=>{if(running)return;prog=[];active=null;reset()};
+$('reset').onclick=()=>{if(running)return;reset();$('msg').textContent='처음 위치로 돌아왔어요.'};
+$('rb').innerHTML='<svg viewBox="0 0 100 100"><line x1="50" y1="30" x2="50" y2="12" stroke="#334155" stroke-width="6" stroke-linecap="round"/><circle cx="50" cy="11" r="9" fill="#ef4444" stroke="#fff" stroke-width="3"/><rect x="18" y="30" width="64" height="58" rx="16" fill="#60a5fa" stroke="#1e3a8a" stroke-width="4"/><circle cx="37" cy="54" r="8" fill="#fff"/><circle cx="63" cy="54" r="8" fill="#fff"/><circle cx="37" cy="55" r="4" fill="#1e293b"/><circle cx="63" cy="55" r="4" fill="#1e293b"/><rect x="38" y="72" width="24" height="6" rx="3" fill="#1e3a8a"/></svg>';
+const LB=Object.fromEntries(PAL);let dr=null,gh=null,sup=false;const ind=document.createElement('div');ind.id='ind';document.body.appendChild(ind);
+const isC=b=>b.t=='repeat'||b.t=='if',inside=(b,l)=>b.kids===l||b.kids.some(k=>inside(k,l));
+function tgt(el,y){const w=$('ws');if(!el||!w.contains(el))return null;const be=el.closest('.b');
+if(!be){const wr=w.getBoundingClientRect(),lc=w.lastElementChild;return{l:prog,i:prog.length,x:wr.left,w:wr.width,y:lc?lc.getBoundingClientRect().bottom:wr.top+4}}
+const[l,b]=find(prog,be.dataset.id),r=be.getBoundingClientRect();
+if(isC(b)){const ir=be.querySelector(':scope>.in').getBoundingClientRect();
+if(el.closest('.in')||el.closest('.end'))return{l:b.kids,i:b.kids.length,x:ir.left,w:ir.width,y:ir.bottom};
+if(y>=(r.top+ir.top)/2)return{l:b.kids,i:0,x:ir.left,w:ir.width,y:ir.top};
+return{l,i:l.indexOf(b),x:r.left,w:r.width,y:r.top}}
+const before=y<r.top+r.height/2;return{l,i:l.indexOf(b)+(before?0:1),x:r.left,w:r.width,y:before?r.top:r.bottom}}
+document.addEventListener('pointerdown',e=>{if(running)return;const p=e.target.closest('[data-b]'),h=e.target.closest('[data-h]');if(!p&&!h)return;const id=h&&h.dataset.h;dr={id,t:p?p.dataset.b:find(prog,id)[1].t,x:e.clientX,y:e.clientY,on:false}});
+document.addEventListener('pointermove',e=>{if(!dr)return;
+if(!dr.on){if(Math.hypot(e.clientX-dr.x,e.clientY-dr.y)<8)return;dr.on=true;gh=document.createElement('div');gh.className='b gh '+dr.t;gh.textContent=LB[dr.t];document.body.appendChild(gh)}
+gh.style.left=e.clientX+'px';gh.style.top=e.clientY+'px';
+const el=document.elementFromPoint(e.clientX,e.clientY);dr.tg=tgt(el,e.clientY);dr.pal=!!(el&&el.closest('#pal'));
+if(dr.tg){const t=dr.tg;Object.assign(ind.style,{display:'block',left:t.x+'px',width:t.w+'px',top:t.y-3+'px'})}else ind.style.display='none'});
+function endDrag(ok){if(!dr)return;const d=dr;dr=null;ind.style.display='none';if(gh){gh.remove();gh=null}if(!d.on)return;sup=true;setTimeout(()=>sup=false,60);if(!ok)return;
+if(d.id){const[l0,b]=find(prog,d.id);if(d.pal){l0.splice(l0.indexOf(b),1);active=null;ws();return}
+if(!d.tg||inside(b,d.tg.l))return;let i=d.tg.i;const k=l0.indexOf(b);if(l0===d.tg.l&&k<i)i--;l0.splice(k,1);d.tg.l.splice(i,0,b)}
+else{if(!d.tg)return;d.tg.l.splice(d.tg.i,0,{id:++uid,t:d.t,n:3,cond:'trap',kids:[]})}
+active=null;ws()}
+document.addEventListener('pointerup',()=>endDrag(true));document.addEventListener('pointercancel',()=>endDrag(false));
+let AC=null,mute=false;
+function ac(){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state=='suspended')AC.resume()}catch(e){}return AC}
+function tn(f,t0,d,ty,v,f2){if(mute)return;const a=ac();if(!a)return;const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+t0;o.type=ty;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(v,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.05)}
+const sfx={move:()=>tn(330,0,.15,'triangle',.3,460),turn:()=>{tn(520,0,.08,'square',.12);tn(700,.07,.09,'square',.12)},
+star:()=>{tn(880,0,.12,'sine',.3);tn(1320,.1,.3,'sine',.3)},wall:()=>tn(120,0,.3,'sawtooth',.3,50),trap:()=>tn(420,0,.55,'sawtooth',.25,70),
+part:()=>{tn(523,0,.15,'triangle',.3);tn(659,.15,.35,'triangle',.3)},
+win:()=>{[[523,0,.13],[523,.15,.13],[523,.3,.13],[784,.48,.45],[659,1,.2],[784,1.25,.25]].forEach(x=>tn(x[0],x[1],x[2],'square',.15));[523,659,784,1047].forEach(f=>tn(f,1.55,1,'sawtooth',.09))}};
+$('snd').onclick=()=>{mute=!mute;$('snd').textContent=mute?'🔇 소리 꺼짐':'🔊 소리 켜짐';if(!mute){ac();sfx.star()}};
+document.addEventListener('pointerdown',()=>ac(),{once:true});
+sample();mark();
+</script></body></html>
